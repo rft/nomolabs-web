@@ -1,1 +1,8 @@
+@import 'carbon-components-svelte/css/all.css';
 @import 'tailwindcss';
+
+:global(body) {
+	margin: 0;
+	min-height: 100vh;
+	background-color: #f4f4f4;
+}
