@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "carbon-components-svelte": "^0.90.3",
+    "carbon-icons-svelte": "^13.6.0"
+  }
+}
