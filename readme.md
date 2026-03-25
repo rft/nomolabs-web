@@ -2,6 +2,11 @@
 
 A SvelteKit web application with a Nix flake for reproducible development and Docker image builds.
 
+## Docs
+
+- [Blog / Notes Integration](docs/notes-integration.md) — how content from public-notes is fetched and deployed
+- [Deployment](docs/deployment.md) — deploying to Cloudflare Pages or self-hosting
+
 ## Prerequisites
 
 - [Nix](https://nixos.org/download/) with flakes enabled
