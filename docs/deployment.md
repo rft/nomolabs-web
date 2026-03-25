@@ -1,8 +1,18 @@
 # Deployment
 
-This site is built as a static site using `@sveltejs/adapter-static` and can be hosted anywhere that serves static files.
+This site is built as a static site using `@sveltejs/adapter-static` and prerendered at build time. The output is plain HTML/CSS/JS that can be hosted anywhere that serves static files.
+
+## Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_GITHUB_TOKEN` | Recommended | GitHub personal access token (fine-grained, public repos read-only). Raises API rate limit from 60 to 5,000 req/hr. |
 
 ## Cloudflare Pages
+
+### Option A: Git integration (recommended)
+
+Connecting the repo directly to Cloudflare Pages gives you automatic builds on every push to main.
 
 1. Push your repo to GitHub
 2. In the [Cloudflare dashboard](https://dash.cloudflare.com/), go to **Workers & Pages → Create → Pages → Connect to Git**
@@ -10,16 +20,61 @@ This site is built as a static site using `@sveltejs/adapter-static` and can be 
 4. Set the build configuration:
    - **Build command:** `cd nomolabs-web && npm install && npm run build`
    - **Build output directory:** `nomolabs-web/build`
-5. Under **Environment variables**, add any required variables (e.g. `VITE_GITHUB_TOKEN`)
+5. Under **Environment variables**, add `VITE_GITHUB_TOKEN`
 6. Click **Save and Deploy**
 
-### Deploy Hook
+With this setup, pushes to the nomolabs repo automatically trigger a build. For public-notes changes, add a deploy hook (see below).
 
-To allow external repositories to trigger a rebuild (e.g. from public-notes), create a deploy hook:
+### Option B: GitHub Actions with Wrangler
+
+If the Cloudflare git integration isn't working or you want more control, deploy via GitHub Actions instead. Add this workflow to the nomolabs repo:
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cd nomolabs-web && npm install && npm run build
+        env:
+          VITE_GITHUB_TOKEN: ${{ secrets.VITE_GITHUB_TOKEN }}
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: pages deploy nomolabs-web/build --project-name=nomolabs
+```
+
+Required secrets in the nomolabs repo (`Settings → Secrets and variables → Actions`):
+
+| Secret | Description |
+|--------|-------------|
+| `VITE_GITHUB_TOKEN` | GitHub token for fetching notes at build time |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Pages edit permissions |
+
+To create the Cloudflare API token: [Cloudflare dashboard](https://dash.cloudflare.com/profile/api-tokens) → **Create Token → Edit Cloudflare Workers** template.
+
+You can also deploy manually from the command line:
+
+```sh
+cd nomolabs-web && npm run build && npx wrangler pages deploy build --project-name=nomolabs
+```
+
+### Deploy hook (for public-notes rebuilds)
+
+Regardless of which option you choose, create a deploy hook so that pushes to public-notes also trigger a rebuild:
 
 `Settings → Builds & Deployments → Deploy Hooks → Add hook`
 
-Copy the URL and store it as a secret in any repo that should trigger deploys. See [notes-integration.md](notes-integration.md) for the full setup.
+Copy the URL and store it as a secret in the public-notes repo. See [notes-integration.md](notes-integration.md) for the full workflow setup.
 
 ---
 
@@ -77,13 +132,7 @@ Build the app directly:
 nix build .#nomolabs-app
 ```
 
-Output is in `./result/build/`. Run it with:
-
-```sh
-node result/build/index.js
-```
-
-Or copy `result/build/` to wherever your web server expects static files.
+Output is in `./result/build/`. Since the site is fully static, copy `result/build/` to wherever your web server expects static files.
 
 ---
 

@@ -1,46 +1,64 @@
 # Notes Integration
 
-The blog pulls content from [rft/public-notes](https://github.com/rft/public-notes) at build time. Any push to that repository automatically triggers a rebuild of this site.
+The blog pulls content from [rft/public-notes](https://github.com/rft/public-notes) at build time. Markdown files in the root of that repository are rendered as articles on this site. Any push to that repository can trigger a rebuild to keep content in sync.
 
 ## How it works
 
 ```
 Push to public-notes
     → GitHub Action fires
-        → POSTs to Cloudflare Pages deploy hook
-            → Cloudflare triggers a rebuild of this site
-                → SvelteKit fetches content from public-notes during build
-                    → Site is built and deployed with fresh content
+        → POSTs to Cloudflare Pages deploy hook (or self-hosted webhook)
+            → Site rebuild is triggered
+                → SvelteKit fetches all .md files from public-notes via GitHub API
+                    → Site is prerendered as static HTML and deployed
 ```
 
-## Fetching content in SvelteKit
+## Architecture
 
-Pages fetch markdown files from GitHub's raw content API at build time:
+All GitHub fetching logic lives in `src/lib/github.ts`. It provides two functions:
 
-```js
-// src/routes/blog/+page.js
-export async function load({ fetch }) {
-    const res = await fetch(
-        'https://api.github.com/repos/rft/public-notes/contents/posts',
-        { headers: { Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}` } }
-    );
-    const files = await res.json();
-    return { posts: files.filter(f => f.name.endsWith('.md')) };
+- **`fetchAllNotes(fetch)`** — lists all `.md` files in the repo root (excluding `readme.md`), fetches each file's content and most recent commit date, converts markdown to HTML with `marked`, and returns them sorted newest-first.
+- **`fetchNote(slug, fetch)`** — fetches a single note by filename (slug = filename without `.md`), returns its content as HTML with metadata, or `null` if not found.
+
+### Routes
+
+| Route | Source | Description |
+|-------|--------|-------------|
+| `/` | `+page.server.ts` → `+page.svelte` | Displays the latest note |
+| `/articles` | `+page.server.ts` → `+page.svelte` | Paginated list of all notes (10 per page) |
+| `/articles/[slug]` | `+page.server.ts` → `+page.svelte` | Individual note view |
+
+### Data shape
+
+Each note object returned from the fetch functions:
+
+```ts
+{
+    slug: string;   // filename without .md (e.g. "Blender Notes")
+    title: string;  // extracted from first # heading, or prettified filename
+    mtime: string;  // ISO date string from most recent commit
+    html: string;   // markdown converted to HTML
 }
 ```
 
-```js
-// src/routes/blog/[slug]/+page.js
-export async function load({ params, fetch }) {
-    const res = await fetch(
-        `https://raw.githubusercontent.com/rft/public-notes/main/posts/${params.slug}.md`
-    );
-    const markdown = await res.text();
-    return { content: markdown };
-}
-```
+### Static prerendering
 
-> Since public-notes is a public repo, `VITE_GITHUB_TOKEN` is optional but recommended to avoid GitHub's unauthenticated rate limit (60 req/hr).
+The site uses `@sveltejs/adapter-static`. All pages — including dynamic `[slug]` routes — are prerendered at build time. The prerenderer discovers article pages by crawling links from `/articles`. No GitHub API calls happen at runtime.
+
+## GitHub token
+
+A `VITE_GITHUB_TOKEN` environment variable is recommended. Without it, builds are limited to GitHub's unauthenticated rate limit of 60 requests/hour. With a token, the limit is 5,000/hour.
+
+To create a token:
+
+1. Go to https://github.com/settings/tokens?type=beta
+2. Generate a new fine-grained token with **Public Repositories (read-only)** access
+3. No additional permissions needed
+4. Add it to `nomolabs-web/.env` locally:
+   ```
+   VITE_GITHUB_TOKEN=github_pat_...
+   ```
+5. For deployment, add it as an environment variable in your hosting platform
 
 ## Triggering rebuilds from public-notes
 
