@@ -215,7 +215,7 @@
 
 	.articles-content {
 		min-width: 0;
-		padding: 0 2rem 2rem 0;
+		padding: 0 2rem 2rem;
 	}
 
 	@media (max-width: 672px) {
