@@ -1,6 +1,5 @@
 <script lang="ts">
 	import 'carbon-components-svelte/css/white.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import {
 		Header,
 		HeaderNav,
@@ -10,10 +9,6 @@
 
 	let { children } = $props();
 </script>
-
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
 
 <Header platformName="NomoLabs">
 	{#snippet children()}
@@ -26,5 +21,26 @@
 </Header>
 
 <Content>
-	{@render children()}
+	<div class="centered">
+		{@render children()}
+	</div>
 </Content>
+
+<style>
+	.centered {
+		max-width: 960px;
+		margin: 0 auto;
+	}
+
+	:global(.doc-tag) {
+		display: inline-block;
+		padding: 0.1em 0.5em;
+		margin: 0 0.1em;
+		font-size: 0.75rem;
+		font-weight: 500;
+		border-radius: 1rem;
+		background-color: var(--cds-tag-background-teal, #d9fbfb);
+		color: var(--cds-tag-color-teal, #004144);
+		vertical-align: baseline;
+	}
+</style>

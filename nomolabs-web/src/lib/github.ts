@@ -13,6 +13,23 @@ export function extractTitle(markdown: string, filename: string): string {
 	return filename.replace(/\.md$/, '').replace(/[-_]/g, ' ');
 }
 
+export function extractTags(markdown: string): string[] {
+	const tags = new Set<string>();
+	const regex = /(?:^|\s)#(\w+)/gm;
+	let match;
+	while ((match = regex.exec(markdown)) !== null) {
+		tags.add(match[1].toLowerCase());
+	}
+	return [...tags].sort();
+}
+
+function styleTagsInHtml(html: string): string {
+	return html.replace(
+		/((?:^|[\s>]))#(\w+)/g,
+		'$1<span class="doc-tag">#$2</span>'
+	);
+}
+
 const EXCLUDED = ['readme.md'];
 
 export async function fetchAllNotes(fetchFn: typeof fetch) {
@@ -52,7 +69,8 @@ export async function fetchAllNotes(fetchFn: typeof fetch) {
 				slug,
 				title: extractTitle(markdown, f.name),
 				mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
-				html: marked(markdown) as string
+				html: styleTagsInHtml(marked(markdown) as string),
+				tags: extractTags(markdown)
 			};
 		})
 	);
@@ -87,6 +105,7 @@ export async function fetchNote(slug: string, fetchFn: typeof fetch) {
 		slug,
 		title: extractTitle(markdown, filename),
 		mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
-		html: marked(markdown) as string
+		html: styleTagsInHtml(marked(markdown) as string),
+		tags: extractTags(markdown)
 	};
 }
