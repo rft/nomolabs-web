@@ -5,16 +5,24 @@
 
 	let { data } = $props();
 
-	let selectedTags: string[] = $derived.by(() => {
+	let includedTags: string[] = $derived.by(() => {
 		if (!browser) return [];
 		return $page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [];
 	});
 
+	let excludedTags: string[] = $derived.by(() => {
+		if (!browser) return [];
+		return $page.url.searchParams.get('ntags')?.split(',').filter(Boolean) ?? [];
+	});
+
+	let hasFilters = $derived(includedTags.length > 0 || excludedTags.length > 0);
+
 	let filteredDocs = $derived(
-		selectedTags.length === 0
+		!hasFilters
 			? data.docs
 			: data.docs.filter((doc: { tags: string[] }) =>
-					selectedTags.every((t) => doc.tags.includes(t))
+					includedTags.every((t) => doc.tags.includes(t)) &&
+					excludedTags.every((t) => !doc.tags.includes(t))
 				)
 	);
 </script>
@@ -34,7 +42,7 @@
 			</ClickableTile>
 		{/each}
 	</div>
-{:else if selectedTags.length > 0}
+{:else if hasFilters}
 	<p>No articles match the selected tags.</p>
 {:else}
 	<p>No articles yet.</p>

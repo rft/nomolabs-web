@@ -7,10 +7,8 @@ export function githubHeaders() {
 	return token ? { Authorization: `token ${token}` } : {};
 }
 
-export function extractTitle(markdown: string, filename: string): string {
-	const match = markdown.match(/^#\s+(.+)$/m);
-	if (match) return match[1].trim();
-	return filename.replace(/\.md$/, '').replace(/[-_]/g, ' ');
+export function extractTitle(filename: string): string {
+	return filename.replace(/\.md$/, '').replace(/_/g, ' ');
 }
 
 export function extractTags(markdown: string): string[] {
@@ -26,7 +24,8 @@ export function extractTags(markdown: string): string[] {
 function styleTagsInHtml(html: string): string {
 	return html.replace(
 		/((?:^|[\s>]))#(\w+)/g,
-		'$1<span class="doc-tag">#$2</span>'
+		(_, prefix, tag) =>
+			`${prefix}<a class="doc-tag" href="/articles?tags=${tag.toLowerCase()}">#${tag}</a>`
 	);
 }
 
@@ -67,7 +66,7 @@ export async function fetchAllNotes(fetchFn: typeof fetch) {
 			const slug = f.name.replace(/\.md$/, '');
 			return {
 				slug,
-				title: extractTitle(markdown, f.name),
+				title: extractTitle(f.name),
 				mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
 				html: styleTagsInHtml(marked(markdown) as string),
 				tags: extractTags(markdown)
@@ -103,7 +102,7 @@ export async function fetchNote(slug: string, fetchFn: typeof fetch) {
 
 	return {
 		slug,
-		title: extractTitle(markdown, filename),
+		title: extractTitle(filename),
 		mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
 		html: styleTagsInHtml(marked(markdown) as string),
 		tags: extractTags(markdown)

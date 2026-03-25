@@ -21,18 +21,11 @@
 </Header>
 
 <Content>
-	<div class="centered">
-		{@render children()}
-	</div>
+	{@render children()}
 </Content>
 
 <style>
-	.centered {
-		max-width: 960px;
-		margin: 0 auto;
-	}
-
-	:global(.doc-tag) {
+	:global(a.doc-tag) {
 		display: inline-block;
 		padding: 0.1em 0.5em;
 		margin: 0 0.1em;
@@ -42,5 +35,10 @@
 		background-color: var(--cds-tag-background-teal, #d9fbfb);
 		color: var(--cds-tag-color-teal, #004144);
 		vertical-align: baseline;
+		text-decoration: none;
+	}
+
+	:global(a.doc-tag:hover) {
+		background-color: var(--cds-tag-hover-teal, #9ef0f0);
 	}
 </style>

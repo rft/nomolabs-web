@@ -8,24 +8,34 @@
 
 	let searchQuery = $state('');
 
-	let selectedTags: string[] = $derived.by(() => {
+	let includedTags: string[] = $derived.by(() => {
 		if (!browser) return [];
 		return $page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [];
+	});
+
+	let excludedTags: string[] = $derived.by(() => {
+		if (!browser) return [];
+		return $page.url.searchParams.get('ntags')?.split(',').filter(Boolean) ?? [];
 	});
 
 	let filteredTags = $derived(
 		data.allTags.filter(
 			(t: { name: string; count: number }) =>
-				t.name.includes(searchQuery.toLowerCase()) && !selectedTags.includes(t.name)
+				t.name.includes(searchQuery.toLowerCase())
 		)
 	);
 
-	function updateTags(tags: string[]) {
-		const params = new URLSearchParams($page.url.searchParams);
-		if (tags.length > 0) {
-			params.set('tags', tags.join(','));
+	function updateUrl(included: string[], excluded: string[]) {
+		const params = new URLSearchParams(browser ? $page.url.searchParams : '');
+		if (included.length > 0) {
+			params.set('tags', included.join(','));
 		} else {
 			params.delete('tags');
+		}
+		if (excluded.length > 0) {
+			params.set('ntags', excluded.join(','));
+		} else {
+			params.delete('ntags');
 		}
 		const qs = params.toString();
 		goto(`${$page.url.pathname}${qs ? '?' + qs : ''}`, {
@@ -35,15 +45,35 @@
 		});
 	}
 
-	function addTag(name: string) {
-		if (!selectedTags.includes(name)) {
-			updateTags([...selectedTags, name]);
+	function includeTag(name: string) {
+		const newExcluded = excludedTags.filter((t) => t !== name);
+		if (includedTags.includes(name)) {
+			updateUrl(includedTags.filter((t) => t !== name), newExcluded);
+		} else {
+			updateUrl([...includedTags, name], newExcluded);
 		}
-		searchQuery = '';
 	}
 
-	function removeTag(name: string) {
-		updateTags(selectedTags.filter((t) => t !== name));
+	function excludeTag(name: string) {
+		const newIncluded = includedTags.filter((t) => t !== name);
+		if (excludedTags.includes(name)) {
+			updateUrl(newIncluded, excludedTags.filter((t) => t !== name));
+		} else {
+			updateUrl(newIncluded, [...excludedTags, name]);
+		}
+	}
+
+	function clearTag(name: string) {
+		updateUrl(
+			includedTags.filter((t) => t !== name),
+			excludedTags.filter((t) => t !== name)
+		);
+	}
+
+	function tagState(name: string): 'include' | 'exclude' | 'none' {
+		if (includedTags.includes(name)) return 'include';
+		if (excludedTags.includes(name)) return 'exclude';
+		return 'none';
 	}
 </script>
 
@@ -51,25 +81,36 @@
 	<aside class="sidenav">
 		<h4>Filter by tags</h4>
 
-		{#if selectedTags.length > 0}
-			<div class="selected-tags">
-				{#each selectedTags as tag}
-					<Tag filter on:close={() => removeTag(tag)} type="blue">{tag}</Tag>
-				{/each}
-			</div>
-		{/if}
-
 		<Search
 			bind:value={searchQuery}
 			placeholder="Search tags..."
 			size="sm"
 		/>
 
-		<div class="available-tags">
+		<div class="tag-list">
 			{#each filteredTags as tag}
-				<button class="tag-btn" onclick={() => addTag(tag.name)}>
-					<Tag type="outline" size="sm">{tag.name} ({tag.count})</Tag>
-				</button>
+				{@const state = tagState(tag.name)}
+				<div class="tag-row" class:active-include={state === 'include'} class:active-exclude={state === 'exclude'}>
+					<button
+						class="mode-btn include-btn"
+						class:active={state === 'include'}
+						onclick={() => includeTag(tag.name)}
+						title="Include {tag.name}"
+					>+</button>
+					<button
+						class="mode-btn exclude-btn"
+						class:active={state === 'exclude'}
+						onclick={() => excludeTag(tag.name)}
+						title="Exclude {tag.name}"
+					>&minus;</button>
+					<span class="tag-label">
+						<Tag
+							type={state === 'include' ? 'teal' : state === 'exclude' ? 'red' : 'outline'}
+							size="sm"
+						>{tag.name}</Tag>
+					</span>
+					<span class="tag-count">{tag.count}</span>
+				</div>
 			{/each}
 		</div>
 	</aside>
@@ -82,8 +123,10 @@
 <style>
 	.articles-layout {
 		display: grid;
-		grid-template-columns: 220px 1fr;
+		grid-template-columns: 250px 1fr;
 		gap: 2rem;
+		margin: -2rem;
+		margin-top: 0;
 	}
 
 	.sidenav {
@@ -92,6 +135,8 @@
 		align-self: start;
 		max-height: calc(100vh - 5rem);
 		overflow-y: auto;
+		padding: 1rem;
+		border-right: 1px solid var(--cds-border-subtle, #e0e0e0);
 	}
 
 	.sidenav h4 {
@@ -103,31 +148,74 @@
 		color: var(--cds-text-secondary, #525252);
 	}
 
-	.selected-tags {
+	.tag-list {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.available-tags {
-		display: flex;
-		flex-wrap: wrap;
+		flex-direction: column;
 		gap: 0.25rem;
 		margin-top: 0.75rem;
 	}
 
-	.tag-btn {
-		all: unset;
-		cursor: pointer;
+	.tag-row {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.125rem 0;
+		border-radius: 2px;
 	}
 
-	.tag-btn:hover :global(.bx--tag) {
-		background-color: var(--cds-layer-hover, #e5e5e5);
+	.tag-row.active-include {
+		background: color-mix(in srgb, var(--cds-support-success, #198038) 8%, transparent);
+	}
+
+	.tag-row.active-exclude {
+		background: color-mix(in srgb, var(--cds-support-error, #da1e28) 8%, transparent);
+	}
+
+	.mode-btn {
+		all: unset;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		font-size: 0.875rem;
+		font-weight: 600;
+		border-radius: 2px;
+		cursor: pointer;
+		color: var(--cds-text-secondary, #525252);
+		background: var(--cds-field-01, #f4f4f4);
+		flex-shrink: 0;
+	}
+
+	.mode-btn:hover {
+		background: var(--cds-layer-hover, #e5e5e5);
+	}
+
+	.include-btn.active {
+		background: var(--cds-support-success, #198038);
+		color: white;
+	}
+
+	.exclude-btn.active {
+		background: var(--cds-support-error, #da1e28);
+		color: white;
+	}
+
+	.tag-label {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.tag-count {
+		font-size: 0.75rem;
+		color: var(--cds-text-secondary, #525252);
+		flex-shrink: 0;
+		margin-right: 0.25rem;
 	}
 
 	.articles-content {
 		min-width: 0;
+		padding: 0 2rem 2rem 0;
 	}
 
 	@media (max-width: 672px) {
