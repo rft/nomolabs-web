@@ -7,13 +7,17 @@
 		Header,
 		HeaderNav,
 		HeaderNavItem,
+		SideNav,
+		SideNavItems,
+		SideNavLink,
 		Content
 	} from 'carbon-components-svelte';
 
 	let { children } = $props();
+	let isSideNavOpen = $state(false);
 </script>
 
-<Header platformName="NomoLabs">
+<Header platformName="NomoLabs" bind:isSideNavOpen>
 	{#snippet children()}
 		<HeaderNav>
 			<HeaderNavItem href="/" text="Home" />
@@ -22,6 +26,14 @@
 		</HeaderNav>
 	{/snippet}
 </Header>
+
+<SideNav bind:isOpen={isSideNavOpen}>
+	<SideNavItems>
+		<SideNavLink href="/" text="Home" />
+		<SideNavLink href="/articles" text="Articles" />
+		<SideNavLink href="/tools" text="Tools" />
+	</SideNavItems>
+</SideNav>
 
 <Content>
 	{@render children()}
