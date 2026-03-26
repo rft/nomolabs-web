@@ -14,7 +14,7 @@ const marked = new Marked(
 			return hljs.highlightAuto(code).value;
 		}
 	}),
-	markedKatex({ throwOnError: false })
+	markedKatex({ throwOnError: false, nonStandard: true })
 );
 
 export const markdownRenderer: ContentRenderer = {
