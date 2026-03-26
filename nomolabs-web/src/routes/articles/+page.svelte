@@ -25,6 +25,7 @@
 					excludedTags.every((t) => !doc.tags.includes(t))
 				)
 	);
+
 </script>
 
 <h1>Articles</h1>

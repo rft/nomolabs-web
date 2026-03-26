@@ -25,7 +25,7 @@
 		)
 	);
 
-	function updateUrl(included: string[], excluded: string[]) {
+	function updateUrl(included: string[], excluded: string[], navigateToGrid = false) {
 		const params = new URLSearchParams(browser ? $page.url.searchParams : '');
 		if (included.length > 0) {
 			params.set('tags', included.join(','));
@@ -38,19 +38,20 @@
 			params.delete('ntags');
 		}
 		const qs = params.toString();
-		goto(`${$page.url.pathname}${qs ? '?' + qs : ''}`, {
-			replaceState: true,
-			noScroll: true,
-			keepFocus: true
+		const path = navigateToGrid ? '/articles' : $page.url.pathname;
+		goto(`${path}${qs ? '?' + qs : ''}`, {
+			replaceState: !navigateToGrid,
+			noScroll: !navigateToGrid,
+			keepFocus: !navigateToGrid
 		});
 	}
 
-	function includeTag(name: string) {
+	function includeTag(name: string, navigateToGrid = false) {
 		const newExcluded = excludedTags.filter((t) => t !== name);
 		if (includedTags.includes(name)) {
-			updateUrl(includedTags.filter((t) => t !== name), newExcluded);
+			updateUrl(includedTags.filter((t) => t !== name), newExcluded, navigateToGrid);
 		} else {
-			updateUrl([...includedTags, name], newExcluded);
+			updateUrl([...includedTags, name], newExcluded, navigateToGrid);
 		}
 	}
 
@@ -103,12 +104,12 @@
 						onclick={() => excludeTag(tag.name)}
 						title="Exclude {tag.name}"
 					>&minus;</button>
-					<span class="tag-label">
+					<button class="tag-label" onclick={() => includeTag(tag.name, true)} title="Filter by {tag.name}">
 						<Tag
 							type={state === 'include' ? 'teal' : state === 'exclude' ? 'red' : 'outline'}
 							size="sm"
 						>{tag.name}</Tag>
-					</span>
+					</button>
 					<span class="tag-count">{tag.count}</span>
 				</div>
 			{/each}
@@ -202,8 +203,10 @@
 	}
 
 	.tag-label {
+		all: unset;
 		flex: 1;
 		min-width: 0;
+		cursor: pointer;
 	}
 
 	.tag-count {
