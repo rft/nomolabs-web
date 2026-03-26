@@ -1,5 +1,8 @@
 <script lang="ts">
 	import 'carbon-components-svelte/css/white.css';
+	import 'highlight.js/styles/github.css';
+	import 'katex/dist/katex.min.css';
+	import '$lib/styles/article-content.css';
 	import {
 		Header,
 		HeaderNav,

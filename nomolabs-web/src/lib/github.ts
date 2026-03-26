@@ -1,4 +1,4 @@
-import { marked } from 'marked';
+import { getRenderer, renderContent } from './rendering/index.js';
 
 const REPO = 'rft/public-notes';
 
@@ -11,25 +11,9 @@ export function extractTitle(filename: string): string {
 	return filename.replace(/\.md$/, '').replace(/_/g, ' ');
 }
 
-export function extractTags(markdown: string): string[] {
-	const tags = new Set<string>();
-	const regex = /(?:^|\s)#(\w+)/gm;
-	let match;
-	while ((match = regex.exec(markdown)) !== null) {
-		tags.add(match[1].toLowerCase());
-	}
-	return [...tags].sort();
-}
-
-function styleTagsInHtml(html: string): string {
-	return html.replace(
-		/((?:^|[\s>]))#(\w+)/g,
-		(_, prefix, tag) =>
-			`${prefix}<a class="doc-tag" href="/articles?tags=${tag.toLowerCase()}">#${tag}</a>`
-	);
-}
-
 const EXCLUDED = ['readme.md'];
+
+const SUPPORTED_EXTENSIONS = ['.md'];
 
 export async function fetchAllNotes(fetchFn: typeof fetch) {
 	const headers = githubHeaders();
@@ -47,12 +31,17 @@ export async function fetchAllNotes(fetchFn: typeof fetch) {
 		console.error('GitHub API did not return an array:', files);
 		return [];
 	}
-	const mdFiles = files.filter(
-		(f) => f.name.endsWith('.md') && !EXCLUDED.includes(f.name.toLowerCase())
+	const supportedFiles = files.filter(
+		(f) =>
+			SUPPORTED_EXTENSIONS.some((ext) => f.name.endsWith(ext)) &&
+			!EXCLUDED.includes(f.name.toLowerCase())
 	);
 
 	const docs = await Promise.all(
-		mdFiles.map(async (f) => {
+		supportedFiles.map(async (f) => {
+			const renderer = getRenderer(f.name);
+			if (!renderer) return null;
+
 			const [contentRes, commitRes] = await Promise.all([
 				fetchFn(f.download_url),
 				fetchFn(
@@ -60,28 +49,33 @@ export async function fetchAllNotes(fetchFn: typeof fetch) {
 					{ headers }
 				)
 			]);
-			const markdown = await contentRes.text();
+			const source = await contentRes.text();
 			const commits: { commit: { committer: { date: string } } }[] = await commitRes.json();
 			const date = commits[0]?.commit?.committer?.date;
-			const slug = f.name.replace(/\.md$/, '');
+			const slug = f.name.replace(/\.[^.]+$/, '');
+			const { html, tags } = await renderContent(source, renderer);
 			return {
 				slug,
 				title: extractTitle(f.name),
 				mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
-				html: styleTagsInHtml(marked(markdown) as string),
-				tags: extractTags(markdown)
+				html,
+				tags
 			};
 		})
 	);
 
-	docs.sort((a, b) => new Date(b.mtime).getTime() - new Date(a.mtime).getTime());
-	return docs;
+	const validDocs = docs.filter((d) => d !== null);
+	validDocs.sort((a, b) => new Date(b.mtime).getTime() - new Date(a.mtime).getTime());
+	return validDocs;
 }
 
 export async function fetchNote(slug: string, fetchFn: typeof fetch) {
 	const headers = githubHeaders();
 	const filename = `${slug}.md`;
 	const filePath = encodeURIComponent(filename);
+
+	const renderer = getRenderer(filename);
+	if (!renderer) return null;
 
 	const [contentRes, commitRes] = await Promise.all([
 		fetchFn(`https://api.github.com/repos/${REPO}/contents/${filePath}`, { headers }),
@@ -95,16 +89,18 @@ export async function fetchNote(slug: string, fetchFn: typeof fetch) {
 
 	const file: { download_url: string } = await contentRes.json();
 	const rawRes = await fetchFn(file.download_url);
-	const markdown = await rawRes.text();
+	const source = await rawRes.text();
 
 	const commits: { commit: { committer: { date: string } } }[] = await commitRes.json();
 	const date = commits[0]?.commit?.committer?.date;
+
+	const { html, tags } = await renderContent(source, renderer);
 
 	return {
 		slug,
 		title: extractTitle(filename),
 		mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
-		html: styleTagsInHtml(marked(markdown) as string),
-		tags: extractTags(markdown)
+		html,
+		tags
 	};
 }

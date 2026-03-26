@@ -27,6 +27,10 @@
 	},
 	"dependencies": {
 		"carbon-components-svelte": "^0.100.0",
-		"marked": "^17.0.5"
+		"highlight.js": "^11.11.1",
+		"katex": "^0.16.43",
+		"marked": "^17.0.5",
+		"marked-highlight": "^2.2.3",
+		"marked-katex-extension": "^5.1.7"
 	}
 }
