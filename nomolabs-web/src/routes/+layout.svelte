@@ -17,7 +17,7 @@
 	let isSideNavOpen = $state(false);
 </script>
 
-<Header platformName="NomoLabs" bind:isSideNavOpen>
+<Header platformName="NomoLabs" href="/" bind:isSideNavOpen>
 	{#snippet children()}
 		<HeaderNav>
 			<HeaderNavItem href="/" text="Home" />
@@ -40,6 +40,16 @@
 </Content>
 
 <style>
+	/* Hide hamburger menu and sidenav on desktop */
+	@media (min-width: 1056px) {
+		:global(.bx--header__menu-toggle) {
+			display: none;
+		}
+		:global(.bx--side-nav) {
+			display: none;
+		}
+	}
+
 	:global(a.doc-tag) {
 		display: inline-block;
 		padding: 0.1em 0.5em;
