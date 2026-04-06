@@ -47,6 +47,8 @@
 		return $page.url.searchParams.get('ntags')?.split(',').filter(Boolean) ?? [];
 	});
 
+	let isSlugPage = $derived(browser && $page.url.pathname !== '/blogs');
+
 	let filteredTags = $derived(
 		data.allTags.filter(
 			(t: { name: string; count: number }) =>
@@ -84,12 +86,12 @@
 		}
 	}
 
-	function excludeTag(name: string) {
+	function excludeTag(name: string, navigateToGrid = false) {
 		const newIncluded = includedTags.filter((t) => t !== name);
 		if (excludedTags.includes(name)) {
-			updateUrl(newIncluded, excludedTags.filter((t) => t !== name));
+			updateUrl(newIncluded, excludedTags.filter((t) => t !== name), navigateToGrid);
 		} else {
-			updateUrl(newIncluded, [...excludedTags, name]);
+			updateUrl(newIncluded, [...excludedTags, name], navigateToGrid);
 		}
 	}
 
@@ -154,13 +156,13 @@
 						<button
 							class="mode-btn include-btn"
 							class:active={state === 'include'}
-							onclick={() => includeTag(tag.name)}
+							onclick={() => includeTag(tag.name, isSlugPage)}
 							title="Include {tag.name}"
 						>+</button>
 						<button
 							class="mode-btn exclude-btn"
 							class:active={state === 'exclude'}
-							onclick={() => excludeTag(tag.name)}
+							onclick={() => excludeTag(tag.name, isSlugPage)}
 							title="Exclude {tag.name}"
 						>&minus;</button>
 						<button class="tag-label" onclick={() => includeTag(tag.name, true)} title="Filter by {tag.name}">
