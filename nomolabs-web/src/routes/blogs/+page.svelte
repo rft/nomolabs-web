@@ -28,12 +28,12 @@
 
 </script>
 
-<h1>Articles</h1>
+<h1>Blogs</h1>
 
 {#if filteredDocs.length > 0}
 	<div class="grid">
 		{#each filteredDocs as doc (doc.slug)}
-			<ClickableTile href="/articles/{encodeURIComponent(doc.slug)}{browser ? $page.url.search : ''}">
+			<ClickableTile href="/blogs/{encodeURIComponent(doc.slug)}{browser ? $page.url.search : ''}">
 				<div class="preview">
 					<div class="preview-content">
 						{@html doc.html}
@@ -44,9 +44,9 @@
 		{/each}
 	</div>
 {:else if hasFilters}
-	<p>No articles match the selected tags.</p>
+	<p>No blogs match the selected tags.</p>
 {:else}
-	<p>No articles yet.</p>
+	<p>No blogs yet.</p>
 {/if}
 
 <style>

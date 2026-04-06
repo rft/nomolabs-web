@@ -4,7 +4,7 @@ export function styleTagsInHtml(html: string): string {
 	return html.replace(
 		/((?:^|[\s>]))#(\w+)/g,
 		(_, prefix, tag) =>
-			`${prefix}<a class="doc-tag" href="/articles?tags=${tag.toLowerCase()}">#${tag}</a>`
+			`${prefix}<a class="doc-tag" href="/blogs?tags=${tag.toLowerCase()}">#${tag}</a>`
 	);
 }
 
@@ -18,7 +18,7 @@ export function resolveWikiLinks(source: string): string {
 		(_, target, display) => {
 			const slug = encodeURIComponent(target.trim());
 			const label = (display || target).trim();
-			return `[${label}](/articles/${slug})`;
+			return `[${label}](/blogs/${slug})`;
 		}
 	);
 }

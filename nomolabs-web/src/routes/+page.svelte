@@ -11,7 +11,7 @@
 
 {#if current}
 	<article class="latest">
-		<Link href="/articles/{encodeURIComponent(current.slug)}">
+		<Link href="/blogs/{encodeURIComponent(current.slug)}">
 			<h1>{current.title}</h1>
 		</Link>
 		<time datetime={current.mtime}>

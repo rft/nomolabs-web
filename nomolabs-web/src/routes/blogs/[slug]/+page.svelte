@@ -13,7 +13,7 @@
 </svelte:head>
 
 <div class="article">
-	<Link href="/articles{search}">← Back to articles</Link>
+	<Link href="/blogs{search}">← Back to blogs</Link>
 	<h1>{data.title}</h1>
 	<time datetime={data.mtime}>{new Date(data.mtime).toLocaleDateString()}</time>
 

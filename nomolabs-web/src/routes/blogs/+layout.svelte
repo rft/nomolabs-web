@@ -38,7 +38,7 @@
 			params.delete('ntags');
 		}
 		const qs = params.toString();
-		const path = navigateToGrid ? '/articles' : $page.url.pathname;
+		const path = navigateToGrid ? '/blogs' : $page.url.pathname;
 		goto(`${path}${qs ? '?' + qs : ''}`, {
 			replaceState: !navigateToGrid,
 			noScroll: !navigateToGrid,
@@ -125,9 +125,8 @@
 	.articles-layout {
 		display: grid;
 		grid-template-columns: 250px 1fr;
-		gap: 2rem;
+		gap: 0;
 		margin: -2rem;
-		margin-top: 0;
 	}
 
 	.sidenav {
@@ -218,7 +217,8 @@
 
 	.articles-content {
 		min-width: 0;
-		padding: 0 2rem 2rem;
+		padding: 2rem;
+		padding-top: 0;
 	}
 
 	@media (max-width: 672px) {
