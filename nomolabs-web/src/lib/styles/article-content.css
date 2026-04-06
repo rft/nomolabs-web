@@ -99,6 +99,14 @@
 	margin-bottom: 1em;
 }
 
+/* Videos */
+.article-content video {
+	max-width: 100%;
+	height: auto;
+	border-radius: 4px;
+	margin-bottom: 1em;
+}
+
 /* Horizontal rules */
 .article-content hr {
 	border: none;
