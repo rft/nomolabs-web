@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(nix develop:*)",
+      "Bash(/nix/var/nix/profiles/default/bin/nix develop:*)",
+      "Read(//nix/store/**)",
+      "Bash(/nix/store/2r3fhxkx434q4zy4bclkq48q6icn8q0x-nix-2.32.4/bin/nix develop:*)"
+    ]
+  }
+}

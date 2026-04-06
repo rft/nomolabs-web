@@ -8,6 +8,35 @@
 
 	let searchQuery = $state('');
 
+	interface TocNode {
+		text: string;
+		id: string;
+		level: number;
+		children: TocNode[];
+	}
+
+	function buildTocTree(flat: { level: number; text: string; id: string }[]): TocNode[] {
+		const root: TocNode[] = [];
+		const stack: TocNode[] = [];
+
+		for (const h of flat) {
+			const node: TocNode = { text: h.text, id: h.id, level: h.level, children: [] };
+			while (stack.length > 0 && stack[stack.length - 1].level >= h.level) {
+				stack.pop();
+			}
+			if (stack.length > 0) {
+				stack[stack.length - 1].children.push(node);
+			} else {
+				root.push(node);
+			}
+			stack.push(node);
+		}
+		return root;
+	}
+
+	let headings = $derived($page.data.headings ?? []);
+	let tocTree = $derived(buildTocTree(headings));
+
 	let includedTags: string[] = $derived.by(() => {
 		if (!browser) return [];
 		return $page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [];
@@ -78,42 +107,73 @@
 	}
 </script>
 
+{#snippet tocNode(node: TocNode)}
+	<li class="toc-item">
+		{#if node.children.length > 0}
+			<details class="toc-subtree" open>
+				<summary><a href="#{node.id}">{node.text}</a></summary>
+				<ol class="toc-list">
+					{#each node.children as child}
+						{@render tocNode(child)}
+					{/each}
+				</ol>
+			</details>
+		{:else}
+			<a href="#{node.id}">{node.text}</a>
+		{/if}
+	</li>
+{/snippet}
+
 <div class="articles-layout">
 	<aside class="sidenav">
-		<h4>Filter by tags</h4>
+		{#if headings.length > 0}
+			<details class="sidebar-section" open>
+				<summary class="sidebar-heading">Contents</summary>
+				<ol class="toc-list">
+					{#each tocTree as node}
+						{@render tocNode(node)}
+					{/each}
+				</ol>
+			</details>
+			<hr class="toc-divider" />
+		{/if}
 
-		<Search
-			bind:value={searchQuery}
-			placeholder="Search tags..."
-			size="sm"
-		/>
+		<details class="sidebar-section" open>
+			<summary class="sidebar-heading">Filter by tags</summary>
 
-		<div class="tag-list">
-			{#each filteredTags as tag}
-				{@const state = tagState(tag.name)}
-				<div class="tag-row" class:active-include={state === 'include'} class:active-exclude={state === 'exclude'}>
-					<button
-						class="mode-btn include-btn"
-						class:active={state === 'include'}
-						onclick={() => includeTag(tag.name)}
-						title="Include {tag.name}"
-					>+</button>
-					<button
-						class="mode-btn exclude-btn"
-						class:active={state === 'exclude'}
-						onclick={() => excludeTag(tag.name)}
-						title="Exclude {tag.name}"
-					>&minus;</button>
-					<button class="tag-label" onclick={() => includeTag(tag.name, true)} title="Filter by {tag.name}">
-						<Tag
-							type={state === 'include' ? 'teal' : state === 'exclude' ? 'red' : 'outline'}
-							size="sm"
-						>{tag.name}</Tag>
-					</button>
-					<span class="tag-count">{tag.count}</span>
-				</div>
-			{/each}
-		</div>
+			<Search
+				bind:value={searchQuery}
+				placeholder="Search tags..."
+				size="sm"
+			/>
+
+			<div class="tag-list">
+				{#each filteredTags as tag}
+					{@const state = tagState(tag.name)}
+					<div class="tag-row" class:active-include={state === 'include'} class:active-exclude={state === 'exclude'}>
+						<button
+							class="mode-btn include-btn"
+							class:active={state === 'include'}
+							onclick={() => includeTag(tag.name)}
+							title="Include {tag.name}"
+						>+</button>
+						<button
+							class="mode-btn exclude-btn"
+							class:active={state === 'exclude'}
+							onclick={() => excludeTag(tag.name)}
+							title="Exclude {tag.name}"
+						>&minus;</button>
+						<button class="tag-label" onclick={() => includeTag(tag.name, true)} title="Filter by {tag.name}">
+							<Tag
+								type={state === 'include' ? 'teal' : state === 'exclude' ? 'red' : 'outline'}
+								size="sm"
+							>{tag.name}</Tag>
+						</button>
+						<span class="tag-count">{tag.count}</span>
+					</div>
+				{/each}
+			</div>
+		</details>
 	</aside>
 
 	<main class="articles-content">
@@ -139,13 +199,93 @@
 		border-right: 1px solid var(--cds-border-subtle, #e0e0e0);
 	}
 
-	.sidenav h4 {
+	.sidebar-heading {
 		margin: 0 0 0.75rem;
 		font-size: 0.875rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 		color: var(--cds-text-secondary, #525252);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.sidebar-heading::-webkit-details-marker {
+		display: none;
+	}
+
+	.sidebar-heading::before {
+		content: '▶';
+		display: inline-block;
+		margin-right: 0.4rem;
+		font-size: 0.625rem;
+		transition: transform 0.15s ease;
+	}
+
+	.sidebar-section[open] > .sidebar-heading::before {
+		transform: rotate(90deg);
+	}
+
+	.toc-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+	}
+
+	.toc-item :global(a) {
+		display: block;
+		padding: 0.2rem 0;
+		color: var(--cds-link-primary, #0f62fe);
+		text-decoration: none;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.toc-item :global(a:hover) {
+		text-decoration: underline;
+	}
+
+	.toc-subtree {
+		margin: 0;
+	}
+
+	.toc-subtree > summary {
+		list-style: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+	}
+
+	.toc-subtree > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.toc-subtree > summary::before {
+		content: '▶';
+		display: inline-block;
+		margin-right: 0.3rem;
+		font-size: 0.5rem;
+		vertical-align: middle;
+		transition: transform 0.15s ease;
+	}
+
+	.toc-subtree[open] > summary::before {
+		transform: rotate(90deg);
+	}
+
+	.toc-subtree > .toc-list {
+		padding-left: 0.75rem;
+	}
+
+	.toc-divider {
+		border: none;
+		border-top: 1px solid var(--cds-border-subtle, #e0e0e0);
+		margin: 0.75rem 0;
 	}
 
 	.tag-list {

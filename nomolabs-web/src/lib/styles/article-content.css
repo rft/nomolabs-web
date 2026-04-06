@@ -9,6 +9,7 @@
 	margin-top: 1.5em;
 	margin-bottom: 0.5em;
 	line-height: 1.3;
+	scroll-margin-top: 5rem;
 }
 
 .article-content h1 { font-size: 1.75rem; }

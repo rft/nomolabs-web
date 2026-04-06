@@ -1,4 +1,4 @@
-import type { ContentRenderer, RenderResult } from './types.js';
+import type { ContentRenderer, Heading, RenderResult } from './types.js';
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/rft/public-notes/main/';
 const ASSETS_PREFIX = 'Assets/';
@@ -65,11 +65,43 @@ export function rewriteRelativeMedia(html: string): string {
 	return html;
 }
 
+function slugify(text: string): string {
+	return text
+		.toLowerCase()
+		.replace(/<[^>]+>/g, '')
+		.replace(/[^\w\s-]/g, '')
+		.replace(/\s+/g, '-')
+		.replace(/-+/g, '-')
+		.trim();
+}
+
+function extractHeadings(html: string): { html: string; headings: Heading[] } {
+	const headings: Heading[] = [];
+	const usedIds = new Set<string>();
+	const result = html.replace(
+		/<h([1-6])([^>]*)>([\s\S]*?)<\/h\1>/gi,
+		(match, level, attrs, content) => {
+			const text = content.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').trim();
+			let id = slugify(text);
+			if (usedIds.has(id)) {
+				let i = 1;
+				while (usedIds.has(`${id}-${i}`)) i++;
+				id = `${id}-${i}`;
+			}
+			usedIds.add(id);
+			headings.push({ level: parseInt(level), text, id });
+			return `<h${level}${attrs} id="${id}">${content}</h${level}>`;
+		}
+	);
+	return { html: result, headings };
+}
+
 export async function renderContent(source: string, renderer: ContentRenderer): Promise<RenderResult> {
 	const withEmbeds = resolveEmbeds(source);
 	const resolved = resolveWikiLinks(withEmbeds);
 	const rawHtml = await renderer.render(resolved);
-	const html = rewriteRelativeMedia(styleTagsInHtml(rawHtml));
+	const styledHtml = rewriteRelativeMedia(styleTagsInHtml(rawHtml));
+	const { html, headings } = extractHeadings(styledHtml);
 	const tags = renderer.extractTags(source);
-	return { html, tags };
+	return { html, tags, headings };
 }

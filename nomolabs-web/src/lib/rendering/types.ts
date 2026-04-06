@@ -1,6 +1,13 @@
+export interface Heading {
+	level: number;
+	text: string;
+	id: string;
+}
+
 export interface RenderResult {
 	html: string;
 	tags: string[];
+	headings: Heading[];
 }
 
 export interface ContentRenderer {

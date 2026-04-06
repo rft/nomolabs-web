@@ -53,13 +53,14 @@ export async function fetchAllNotes(fetchFn: typeof fetch) {
 			const commits: { commit: { committer: { date: string } } }[] = await commitRes.json();
 			const date = commits[0]?.commit?.committer?.date;
 			const slug = f.name.replace(/\.[^.]+$/, '');
-			const { html, tags } = await renderContent(source, renderer);
+			const { html, tags, headings } = await renderContent(source, renderer);
 			return {
 				slug,
 				title: extractTitle(f.name),
 				mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
 				html,
-				tags
+				tags,
+				headings
 			};
 		})
 	);
@@ -94,13 +95,14 @@ export async function fetchNote(slug: string, fetchFn: typeof fetch) {
 	const commits: { commit: { committer: { date: string } } }[] = await commitRes.json();
 	const date = commits[0]?.commit?.committer?.date;
 
-	const { html, tags } = await renderContent(source, renderer);
+	const { html, tags, headings } = await renderContent(source, renderer);
 
 	return {
 		slug,
 		title: extractTitle(filename),
 		mtime: date ? new Date(date).toISOString() : new Date(0).toISOString(),
 		html,
-		tags
+		tags,
+		headings
 	};
 }
