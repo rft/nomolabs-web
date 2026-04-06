@@ -80,6 +80,7 @@
 		transform-origin: top left;
 		font-size: 14px;
 		line-height: 1.4;
+		color: #161616;
 	}
 
 	.title {

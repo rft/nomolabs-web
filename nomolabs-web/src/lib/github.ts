@@ -64,7 +64,7 @@ export async function fetchAllNotes(fetchFn: typeof fetch) {
 		})
 	);
 
-	const validDocs = docs.filter((d) => d !== null);
+	const validDocs = docs.filter((d) => d !== null && !d.tags.includes('incomplete'));
 	validDocs.sort((a, b) => new Date(b.mtime).getTime() - new Date(a.mtime).getTime());
 	return validDocs;
 }

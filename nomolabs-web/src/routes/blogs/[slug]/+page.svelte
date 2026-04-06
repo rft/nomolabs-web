@@ -26,6 +26,7 @@
 	.article {
 		max-width: 800px;
 		margin: 0 auto;
+		padding-top: 2rem;
 	}
 
 	h1 {

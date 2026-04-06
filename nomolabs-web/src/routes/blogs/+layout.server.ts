@@ -11,6 +11,7 @@ export async function load({ fetch }) {
 	}
 
 	const allTags = [...tagCounts.entries()]
+		.filter(([name]) => name !== 'incomplete')
 		.map(([name, count]) => ({ name, count }))
 		.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 

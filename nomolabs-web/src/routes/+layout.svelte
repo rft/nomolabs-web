@@ -44,9 +44,9 @@
 
 <Theme {theme} />
 
-<Header platformName="NomoLabs" href="/" bind:isSideNavOpen>
+<Header href="/" bind:isSideNavOpen>
+	<span slot="platform" style="display: inline-flex; align-items: center; gap: 0.50rem;">NomoLabs <span style="font-size: 1.2em; line-height: 1; position: relative; top: -1px;">🌸</span></span>
 	<HeaderNav>
-		<HeaderNavItem href="/" text="Home" />
 		<HeaderNavItem href="/blogs" text="Blogs" />
 		<HeaderNavItem href="/tools" text="Tools" />
 	</HeaderNav>
@@ -57,7 +57,6 @@
 
 <SideNav bind:isOpen={isSideNavOpen}>
 	<SideNavItems>
-		<SideNavLink href="/" text="Home" />
 		<SideNavLink href="/blogs" text="Blogs" />
 		<SideNavLink href="/tools" text="Tools" />
 	</SideNavItems>
