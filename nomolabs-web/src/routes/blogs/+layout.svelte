@@ -49,6 +49,31 @@
 
 	let isSlugPage = $derived(browser && $page.url.pathname !== '/blogs');
 
+	let currentSlug = $derived.by(() => {
+		if (!browser) return '';
+		const match = $page.url.pathname.match(/^\/blogs\/(.+)$/);
+		return match ? decodeURIComponent(match[1]) : '';
+	});
+
+	// Outgoing references from the current page
+	let outgoingRefs = $derived.by(() => {
+		if (!currentSlug || !data.references) return [];
+		const slugs = data.references[currentSlug] ?? [];
+		return slugs.map((s: string) => ({ slug: s, title: data.titles?.[s] ?? s }));
+	});
+
+	// Backlinks: pages that link TO the current page
+	let backlinks = $derived.by(() => {
+		if (!currentSlug || !data.references) return [];
+		const results: { slug: string; title: string }[] = [];
+		for (const [fromSlug, toSlugs] of Object.entries(data.references)) {
+			if ((toSlugs as string[]).includes(currentSlug)) {
+				results.push({ slug: fromSlug, title: data.titles?.[fromSlug] ?? fromSlug });
+			}
+		}
+		return results;
+	});
+
 	let filteredTags = $derived(
 		data.allTags.filter(
 			(t: { name: string; count: number }) =>
@@ -181,6 +206,36 @@
 	<main class="articles-content">
 		{@render children()}
 	</main>
+
+	{#if isSlugPage && (outgoingRefs.length > 0 || backlinks.length > 0)}
+		<aside class="right-sidebar">
+			{#if outgoingRefs.length > 0}
+				<details class="sidebar-section" open>
+					<summary class="sidebar-heading">References</summary>
+					<ul class="ref-list">
+						{#each outgoingRefs as ref}
+							<li><a href="/blogs/{encodeURIComponent(ref.slug)}">{ref.title}</a></li>
+						{/each}
+					</ul>
+				</details>
+			{/if}
+
+			{#if outgoingRefs.length > 0 && backlinks.length > 0}
+				<hr class="toc-divider" />
+			{/if}
+
+			{#if backlinks.length > 0}
+				<details class="sidebar-section" open>
+					<summary class="sidebar-heading">Referenced by</summary>
+					<ul class="ref-list">
+						{#each backlinks as ref}
+							<li><a href="/blogs/{encodeURIComponent(ref.slug)}">{ref.title}</a></li>
+						{/each}
+					</ul>
+				</details>
+			{/if}
+		</aside>
+	{/if}
 </div>
 
 <style>
@@ -366,6 +421,44 @@
 		margin: 0 auto;
 	}
 
+	.right-sidebar {
+		position: fixed;
+		top: 3rem;
+		right: 0;
+		width: 250px;
+		height: calc(100vh - 3rem);
+		overflow-y: auto;
+		padding: 1rem;
+		border-left: 1px solid var(--cds-border-subtle, #e0e0e0);
+		background: var(--cds-ui-background, #ffffff);
+		z-index: 10;
+	}
+
+	.ref-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+	}
+
+	.ref-list li {
+		padding: 0.2rem 0;
+	}
+
+	.ref-list a {
+		color: var(--cds-link-primary, #0f62fe);
+		text-decoration: none;
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.ref-list a:hover {
+		text-decoration: underline;
+	}
+
 	@media (max-width: 672px) {
 		.sidenav {
 			position: static;
@@ -373,6 +466,14 @@
 			height: auto;
 			border-right: none;
 			border-bottom: 1px solid var(--cds-border-subtle, #e0e0e0);
+		}
+
+		.right-sidebar {
+			position: static;
+			width: auto;
+			height: auto;
+			border-left: none;
+			border-top: 1px solid var(--cds-border-subtle, #e0e0e0);
 		}
 	}
 </style>
