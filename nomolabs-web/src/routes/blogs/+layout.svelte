@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { Tag, Search } from 'carbon-components-svelte';
+	import ConnectionGraph from '$lib/components/ConnectionGraph.svelte';
 
 	let { data, children } = $props();
 
@@ -232,6 +233,20 @@
 							<li><a href="/blogs/{encodeURIComponent(ref.slug)}">{ref.title}</a></li>
 						{/each}
 					</ul>
+				</details>
+			{/if}
+
+			{#if Object.keys(data.references).length > 0}
+				{#if outgoingRefs.length > 0 || backlinks.length > 0}
+					<hr class="toc-divider" />
+				{/if}
+				<details class="sidebar-section" open>
+					<summary class="sidebar-heading">Connection Graph</summary>
+					<ConnectionGraph
+						references={data.references}
+						titles={data.titles}
+						currentSlug={currentSlug}
+					/>
 				</details>
 			{/if}
 		</aside>
