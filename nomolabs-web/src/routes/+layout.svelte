@@ -75,6 +75,10 @@
 		:global(.bx--side-nav) {
 			display: none;
 		}
+		/* Reset the left margin Carbon adds for the (now-hidden) side nav */
+		:global(.bx--side-nav ~ .bx--content) {
+			margin-left: 0;
+		}
 	}
 
 	:global(.bx--header__action) {

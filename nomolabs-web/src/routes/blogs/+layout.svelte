@@ -185,20 +185,21 @@
 
 <style>
 	.articles-layout {
-		display: grid;
-		grid-template-columns: 250px 1fr;
-		gap: 0;
+		position: relative;
 		margin: -2rem;
 	}
 
 	.sidenav {
-		position: sticky;
-		top: 4rem;
-		align-self: start;
-		max-height: calc(100vh - 5rem);
+		position: fixed;
+		top: 3rem;
+		left: 0;
+		width: 250px;
+		height: calc(100vh - 3rem);
 		overflow-y: auto;
 		padding: 1rem;
 		border-right: 1px solid var(--cds-border-subtle, #e0e0e0);
+		background: var(--cds-ui-background, #ffffff);
+		z-index: 10;
 	}
 
 	.sidebar-heading {
@@ -361,16 +362,17 @@
 		min-width: 0;
 		padding: 2rem;
 		padding-top: 0;
+		max-width: 900px;
+		margin: 0 auto;
 	}
 
 	@media (max-width: 672px) {
-		.articles-layout {
-			grid-template-columns: 1fr;
-		}
-
 		.sidenav {
 			position: static;
-			max-height: none;
+			width: auto;
+			height: auto;
+			border-right: none;
+			border-bottom: 1px solid var(--cds-border-subtle, #e0e0e0);
 		}
 	}
 </style>
