@@ -7,9 +7,10 @@
 		references: Record<string, string[]>;
 		titles: Record<string, string>;
 		currentSlug?: string;
+		allSlugs?: string[];
 	}
 
-	let { references, titles, currentSlug = '' }: Props = $props();
+	let { references, titles, currentSlug = '', allSlugs = [] }: Props = $props();
 
 	let container: HTMLDivElement;
 	let width = $state(0);
@@ -37,16 +38,19 @@
 			}
 		}
 
-		// Only include nodes that have at least one connection
-		const connectedSlugs = new Set<string>();
+		// Include connected nodes, plus all slugs if provided (for grid page)
+		const includedSlugs = new Set<string>();
 		for (const [from, tos] of Object.entries(references)) {
-			connectedSlugs.add(from);
+			includedSlugs.add(from);
 			for (const to of tos) {
-				connectedSlugs.add(to);
+				includedSlugs.add(to);
 			}
 		}
+		for (const slug of allSlugs) {
+			includedSlugs.add(slug);
+		}
 
-		const nodes: GraphNode[] = [...connectedSlugs].map((slug) => ({
+		const nodes: GraphNode[] = [...includedSlugs].map((slug) => ({
 			id: slug,
 			title: titles[slug] ?? slug,
 			connections: connectionCount.get(slug) ?? 0

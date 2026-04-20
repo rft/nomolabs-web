@@ -250,6 +250,17 @@
 				</details>
 			{/if}
 		</aside>
+	{:else if !isSlugPage}
+		<aside class="right-sidebar">
+			<details class="sidebar-section" open>
+				<summary class="sidebar-heading">Connection Graph</summary>
+				<ConnectionGraph
+					references={data.references}
+					titles={data.titles}
+					allSlugs={Object.keys(data.titles)}
+				/>
+			</details>
+		</aside>
 	{/if}
 </div>
 
