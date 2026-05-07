@@ -17,10 +17,19 @@
 		HeaderGlobalAction
 	} from 'carbon-components-svelte';
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import Light from 'carbon-icons-svelte/lib/Light.svelte';
 	import Moon from 'carbon-icons-svelte/lib/Moon.svelte';
 
 	let { children } = $props();
+
+	let routeTitle = $derived.by(() => {
+		const path = $page.url.pathname;
+		if (path === '/') return 'Home';
+		if (path === '/blogs') return 'Blogs';
+		if (path === '/tools') return 'Tools';
+		return null;
+	});
 	let isSideNavOpen = $state(false);
 
 	let dark = $state(browser ? localStorage.getItem('theme') !== 'white' : true);
@@ -39,6 +48,9 @@
 </script>
 
 <svelte:head>
+	{#if routeTitle}
+		<title>{routeTitle} - NomoLabs</title>
+	{/if}
 	<link rel="stylesheet" href={dark ? hljsDark : hljsLight} />
 </svelte:head>
 
