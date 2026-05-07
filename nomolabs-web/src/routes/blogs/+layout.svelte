@@ -75,8 +75,15 @@
 		return results;
 	});
 
+	let visibleTags = $derived.by(() => {
+		if (!isSlugPage) return data.allTags;
+		const pageTags: string[] = $page.data.tags ?? [];
+		const tagSet = new Set(pageTags);
+		return data.allTags.filter((t: { name: string; count: number }) => tagSet.has(t.name));
+	});
+
 	let filteredTags = $derived(
-		data.allTags.filter(
+		visibleTags.filter(
 			(t: { name: string; count: number }) =>
 				t.name.includes(searchQuery.toLowerCase())
 		)
