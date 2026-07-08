@@ -83,7 +83,12 @@ async function loadAllNotes(fetchFn: typeof fetch): Promise<Note[]> {
 		headers
 	});
 	if (!listRes.ok) {
-		throw new Error(`GitHub API error listing ${REPO}: ${listRes.status} ${listRes.statusText}`);
+		const hint = env.GITHUB_TOKEN
+			? ''
+			: ' — GITHUB_TOKEN is not set, so anonymous rate limits apply (see docs/development.md)';
+		throw new Error(
+			`GitHub API error listing ${REPO}: ${listRes.status} ${listRes.statusText}${hint}`
+		);
 	}
 	const files: { name: string; path: string; download_url: string }[] = await listRes.json();
 	if (!Array.isArray(files)) {
