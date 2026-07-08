@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { browser } from '$app/environment';
 	import { Link } from 'carbon-components-svelte';
 
 	let { data } = $props();
 
-	let search = $derived(browser ? $page.url.search : '');
+	let search = $derived(browser ? page.url.search : '');
 </script>
 
 <svelte:head>

@@ -17,14 +17,14 @@
 		HeaderGlobalAction
 	} from 'carbon-components-svelte';
 	import { browser } from '$app/environment';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import Light from 'carbon-icons-svelte/lib/Light.svelte';
 	import Moon from 'carbon-icons-svelte/lib/Moon.svelte';
 
 	let { children } = $props();
 
 	let routeTitle = $derived.by(() => {
-		const path = $page.url.pathname;
+		const path = page.url.pathname;
 		if (path === '/') return 'Home';
 		if (path === '/blogs') return 'Blogs';
 		if (path === '/tools') return 'Tools';
@@ -57,13 +57,22 @@
 <Theme {theme} />
 
 <Header href="/" bind:isSideNavOpen>
-	<span slot="platform" style="display: inline-flex; align-items: center; gap: 0.50rem;">NomoLabs <span style="font-size: 1.2em; line-height: 1; position: relative; top: -1px;">🌸</span></span>
+	<span slot="platform" style="display: inline-flex; align-items: center; gap: 0.50rem;"
+		>NomoLabs <span style="font-size: 1.2em; line-height: 1; position: relative; top: -1px;"
+			>🌸</span
+		></span
+	>
 	<HeaderNav>
 		<HeaderNavItem href="/blogs" text="Blogs" />
 		<HeaderNavItem href="/tools" text="Tools" />
 	</HeaderNav>
 	<HeaderUtilities>
-		<HeaderGlobalAction aria-label="Toggle dark mode" icon={darkIcon} hideTooltip on:click={toggleDark} />
+		<HeaderGlobalAction
+			aria-label="Toggle dark mode"
+			icon={darkIcon}
+			hideTooltip
+			on:click={toggleDark}
+		/>
 	</HeaderUtilities>
 </Header>
 

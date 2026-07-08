@@ -1,31 +1,26 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { browser } from '$app/environment';
 	import { ClickableTile } from 'carbon-components-svelte';
+	import { parseTagFilters } from '$lib/tag-filters';
 
 	let { data } = $props();
 
-	let includedTags: string[] = $derived.by(() => {
-		if (!browser) return [];
-		return $page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [];
-	});
+	let filters = $derived(
+		browser ? parseTagFilters(page.url.searchParams) : { included: [], excluded: [] }
+	);
 
-	let excludedTags: string[] = $derived.by(() => {
-		if (!browser) return [];
-		return $page.url.searchParams.get('ntags')?.split(',').filter(Boolean) ?? [];
-	});
-
-	let hasFilters = $derived(includedTags.length > 0 || excludedTags.length > 0);
+	let hasFilters = $derived(filters.included.length > 0 || filters.excluded.length > 0);
 
 	let filteredDocs = $derived(
 		!hasFilters
 			? data.docs
-			: data.docs.filter((doc: { tags: string[] }) =>
-					includedTags.every((t) => doc.tags.includes(t)) &&
-					excludedTags.every((t) => !doc.tags.includes(t))
+			: data.docs.filter(
+					(doc) =>
+						filters.included.every((t) => doc.tags.includes(t)) &&
+						filters.excluded.every((t) => !doc.tags.includes(t))
 				)
 	);
-
 </script>
 
 <h1>Blogs</h1>
@@ -33,10 +28,10 @@
 {#if filteredDocs.length > 0}
 	<div class="grid">
 		{#each filteredDocs as doc (doc.slug)}
-			<ClickableTile href="/blogs/{encodeURIComponent(doc.slug)}{browser ? $page.url.search : ''}">
+			<ClickableTile href="/blogs/{encodeURIComponent(doc.slug)}{browser ? page.url.search : ''}">
 				<div class="preview">
 					<div class="preview-content">
-						{@html doc.html}
+						{@html doc.previewHtml}
 					</div>
 				</div>
 				<p class="title">{doc.title}</p>

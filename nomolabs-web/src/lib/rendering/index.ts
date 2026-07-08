@@ -1,6 +1,6 @@
-export type { ContentRenderer, RenderResult } from './types.js';
+export type { ContentRenderer, RenderOptions, RenderResult } from './types.js';
 export { registerRenderer, getRenderer } from './registry.js';
-export { renderContent, styleTagsInHtml } from './pipeline.js';
+export { renderContent } from './pipeline.js';
 export { markdownRenderer } from './markdown-renderer.js';
 
 // Auto-register built-in renderers

@@ -1,5 +1,13 @@
 /* Scoped under .article-content for {@html} rendered content */
 
+/* Wiki links whose target note doesn't exist (or isn't published yet) */
+.article-content .broken-wikilink,
+.preview-content .broken-wikilink {
+	color: var(--cds-text-secondary, #525252);
+	border-bottom: 1px dashed var(--cds-border-strong, #8d8d8d);
+	cursor: default;
+}
+
 .article-content h1,
 .article-content h2,
 .article-content h3,
@@ -12,9 +20,15 @@
 	scroll-margin-top: 5rem;
 }
 
-.article-content h1 { font-size: 1.75rem; }
-.article-content h2 { font-size: 1.5rem; }
-.article-content h3 { font-size: 1.25rem; }
+.article-content h1 {
+	font-size: 1.75rem;
+}
+.article-content h2 {
+	font-size: 1.5rem;
+}
+.article-content h3 {
+	font-size: 1.25rem;
+}
 
 .article-content p {
 	margin-bottom: 1em;

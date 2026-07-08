@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { Tag, Search } from 'carbon-components-svelte';
 	import ConnectionGraph from '$lib/components/ConnectionGraph.svelte';
+	import { parseTagFilters } from '$lib/tag-filters';
 
 	let { data, children } = $props();
 
@@ -35,24 +36,20 @@
 		return root;
 	}
 
-	let headings = $derived($page.data.headings ?? []);
+	let headings = $derived(page.data.headings ?? []);
 	let tocTree = $derived(buildTocTree(headings));
 
-	let includedTags: string[] = $derived.by(() => {
-		if (!browser) return [];
-		return $page.url.searchParams.get('tags')?.split(',').filter(Boolean) ?? [];
-	});
+	let filters = $derived(
+		browser ? parseTagFilters(page.url.searchParams) : { included: [], excluded: [] }
+	);
+	let includedTags = $derived(filters.included);
+	let excludedTags = $derived(filters.excluded);
 
-	let excludedTags: string[] = $derived.by(() => {
-		if (!browser) return [];
-		return $page.url.searchParams.get('ntags')?.split(',').filter(Boolean) ?? [];
-	});
-
-	let isSlugPage = $derived(browser && $page.url.pathname !== '/blogs');
+	let isSlugPage = $derived(browser && page.url.pathname !== '/blogs');
 
 	let currentSlug = $derived.by(() => {
 		if (!browser) return '';
-		const match = $page.url.pathname.match(/^\/blogs\/(.+)$/);
+		const match = page.url.pathname.match(/^\/blogs\/(.+)$/);
 		return match ? decodeURIComponent(match[1]) : '';
 	});
 
@@ -77,20 +74,19 @@
 
 	let visibleTags = $derived.by(() => {
 		if (!isSlugPage) return data.allTags;
-		const pageTags: string[] = $page.data.tags ?? [];
+		const pageTags: string[] = page.data.tags ?? [];
 		const tagSet = new Set(pageTags);
 		return data.allTags.filter((t: { name: string; count: number }) => tagSet.has(t.name));
 	});
 
 	let filteredTags = $derived(
-		visibleTags.filter(
-			(t: { name: string; count: number }) =>
-				t.name.includes(searchQuery.toLowerCase())
+		visibleTags.filter((t: { name: string; count: number }) =>
+			t.name.includes(searchQuery.toLowerCase())
 		)
 	);
 
 	function updateUrl(included: string[], excluded: string[], navigateToGrid = false) {
-		const params = new URLSearchParams(browser ? $page.url.searchParams : '');
+		const params = new URLSearchParams(browser ? page.url.searchParams : '');
 		if (included.length > 0) {
 			params.set('tags', included.join(','));
 		} else {
@@ -102,7 +98,7 @@
 			params.delete('ntags');
 		}
 		const qs = params.toString();
-		const path = navigateToGrid ? '/blogs' : $page.url.pathname;
+		const path = navigateToGrid ? '/blogs' : page.url.pathname;
 		goto(`${path}${qs ? '?' + qs : ''}`, {
 			replaceState: !navigateToGrid,
 			noScroll: !navigateToGrid,
@@ -113,7 +109,11 @@
 	function includeTag(name: string, navigateToGrid = false) {
 		const newExcluded = excludedTags.filter((t) => t !== name);
 		if (includedTags.includes(name)) {
-			updateUrl(includedTags.filter((t) => t !== name), newExcluded, navigateToGrid);
+			updateUrl(
+				includedTags.filter((t) => t !== name),
+				newExcluded,
+				navigateToGrid
+			);
 		} else {
 			updateUrl([...includedTags, name], newExcluded, navigateToGrid);
 		}
@@ -122,7 +122,11 @@
 	function excludeTag(name: string, navigateToGrid = false) {
 		const newIncluded = includedTags.filter((t) => t !== name);
 		if (excludedTags.includes(name)) {
-			updateUrl(newIncluded, excludedTags.filter((t) => t !== name), navigateToGrid);
+			updateUrl(
+				newIncluded,
+				excludedTags.filter((t) => t !== name),
+				navigateToGrid
+			);
 		} else {
 			updateUrl(newIncluded, [...excludedTags, name], navigateToGrid);
 		}
@@ -176,33 +180,37 @@
 		<details class="sidebar-section" open>
 			<summary class="sidebar-heading">Filter by tags</summary>
 
-			<Search
-				bind:value={searchQuery}
-				placeholder="Search tags..."
-				size="sm"
-			/>
+			<Search bind:value={searchQuery} placeholder="Search tags..." size="sm" />
 
 			<div class="tag-list">
 				{#each filteredTags as tag}
 					{@const state = tagState(tag.name)}
-					<div class="tag-row" class:active-include={state === 'include'} class:active-exclude={state === 'exclude'}>
+					<div
+						class="tag-row"
+						class:active-include={state === 'include'}
+						class:active-exclude={state === 'exclude'}
+					>
 						<button
 							class="mode-btn include-btn"
 							class:active={state === 'include'}
 							onclick={() => includeTag(tag.name, isSlugPage)}
-							title="Include {tag.name}"
-						>+</button>
+							title="Include {tag.name}">+</button
+						>
 						<button
 							class="mode-btn exclude-btn"
 							class:active={state === 'exclude'}
 							onclick={() => excludeTag(tag.name, isSlugPage)}
-							title="Exclude {tag.name}"
-						>&minus;</button>
-						<button class="tag-label" onclick={() => includeTag(tag.name, true)} title="Filter by {tag.name}">
+							title="Exclude {tag.name}">&minus;</button
+						>
+						<button
+							class="tag-label"
+							onclick={() => includeTag(tag.name, true)}
+							title="Filter by {tag.name}"
+						>
 							<Tag
 								type={state === 'include' ? 'teal' : state === 'exclude' ? 'red' : 'outline'}
-								size="sm"
-							>{tag.name}</Tag>
+								size="sm">{tag.name}</Tag
+							>
 						</button>
 						<span class="tag-count">{tag.count}</span>
 					</div>
@@ -249,11 +257,7 @@
 				{/if}
 				<details class="sidebar-section" open>
 					<summary class="sidebar-heading">Connection Graph</summary>
-					<ConnectionGraph
-						references={data.references}
-						titles={data.titles}
-						currentSlug={currentSlug}
-					/>
+					<ConnectionGraph references={data.references} titles={data.titles} {currentSlug} />
 				</details>
 			{/if}
 		</aside>

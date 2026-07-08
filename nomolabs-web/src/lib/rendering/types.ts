@@ -10,6 +10,13 @@ export interface RenderResult {
 	headings: Heading[];
 }
 
+export interface RenderOptions {
+	/** Slugs of published notes; wiki links to targets outside this set render as plain text */
+	knownSlugs?: Set<string>;
+	/** Suppress warnings (e.g. when rendering truncated preview source) */
+	quiet?: boolean;
+}
+
 export interface ContentRenderer {
 	/** File extensions this renderer handles (e.g. ['.md']) */
 	extensions: string[];
